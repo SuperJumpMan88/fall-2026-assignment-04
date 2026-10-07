@@ -1,0 +1,55 @@
+erDiagram
+    USERS {
+        int id PK
+        string email
+        string name
+        timestamp created_at
+    }
+
+    BORROWERS {
+        int id PK
+        int user_id FK
+        string card_number
+        string phone
+        string membership_status
+        timestamp created_at
+    }
+
+    AUTHORS {
+        int id PK
+        string name
+        string bio
+        timestamp created_at
+    }
+
+    GENRES {
+        int id PK
+        string name
+        string description
+    }
+
+    BOOKS {
+        int id PK
+        string title
+        string isbn
+        int published_year
+        int author_id FK
+        int genre_id FK
+        timestamp created_at
+    }
+
+    LOANS {
+        int id PK
+        int borrower_id FK
+        int book_id FK
+        timestamp loan_date
+        timestamp due_date
+        timestamp return_date
+        string status
+    }
+
+    USERS ||--o| BORROWERS : "has"
+    AUTHORS ||--o{ BOOKS : "writes"
+    GENRES ||--o{ BOOKS : "categorizes"
+    BORROWERS ||--o{ LOANS : "borrows"
+    BOOKS ||--o{ LOANS : "loaned_in"

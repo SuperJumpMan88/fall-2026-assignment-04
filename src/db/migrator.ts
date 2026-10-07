@@ -1,8 +1,13 @@
-import * as path from 'node:path';
+﻿import * as path from 'node:path';
 import { promises as fs } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
 import { Kysely, PostgresDialect } from 'kysely';
 import { Migrator, FileMigrationProvider } from 'kysely/migration';
 import pg from 'pg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function migrate() {
   const db = new Kysely<any>({
@@ -17,16 +22,28 @@ async function migrate() {
     }),
   });
 
+  const migrationFolder = path.join(__dirname, 'migrations');
+
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: path.join(import.meta.dirname, 'migrations'),
+      migrationFolder,
+      import: async (filePath: string) => {
+        console.log(`Loading migration: ${filePath}`);
+
+        const fileUrl = pathToFileURL(filePath).href;
+
+        console.log(`Importing migration: ${fileUrl}`);
+
+        return import(fileUrl);
+      },
     }),
   });
 
   const direction = process.argv[2];
+
   const { error, results } =
     direction === 'down'
       ? await migrator.migrateDown()
@@ -34,9 +51,13 @@ async function migrate() {
 
   results?.forEach((it) => {
     if (it.status === 'Success') {
-      console.log(`migration "${it.migrationName}" was executed successfully`);
+      console.log(
+        `migration "${it.migrationName}" was executed successfully`
+      );
     } else if (it.status === 'Error') {
-      console.error(`failed to execute migration "${it.migrationName}"`);
+      console.error(
+        `failed to execute migration "${it.migrationName}"`
+      );
     }
   });
 
